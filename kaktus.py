@@ -1,50 +1,53 @@
-import csv
 import telebot
 import requests
 from bs4 import BeautifulSoup as bs
 from decouple import config
 import datetime
 from telebot import types
-
+import time
 BOT_TOKEN = config('BOT_TOKEN')
 bot = telebot.TeleBot(BOT_TOKEN)
 
 
-ls = []
-date =  datetime.datetime.now().date()
-while True:
-    url = f'https://kaktus.media/?lable=8&date={date}&order=time'
-    response = requests.get(url).text
-    page = bs(response, 'lxml')
-    divs = page.find_all('div','ArticleItem--data ArticleItem--data--withImage')
-    link = page.find_all('a','ArticleItem--name')
-    if len(divs)<20:
-        for i in range(len(divs)):
-            new = bs(requests.get(link[i].get('href')).text,'lxml')
-            ps = new.find_all('p')
-            ls.append([divs[i].find('a','ArticleItem--name').text.replace('\n',''),divs[i].find('img').get('src') if divs[i].find('img') != None else 'None', ' '.join([i.text.strip() if i != None else 'None' for i in ps])])
-    if len(divs)>=20:
-        for i in range(len(divs[:20-len(ls)])):
-            new = bs(requests.get(link[i].get('href')).text,'lxml')
-            ps = new.find_all('p')
-            ls.append([divs[i].find('a','ArticleItem--name').text.replace('\n',''),divs[i].find('img').get('src') if divs[i].find('img') != None else 'None', ' '.join([i.text.strip() if i != None else 'None' for i in ps])])
-    if len(ls) < 20:
-        date -= datetime.timedelta(days=1)
-    else:
-        break
-for i in range(len(ls)):
-    ls[i].insert(0,str(i+1))
-print(ls)
+
 # with open('data.csv','w') as f:
 #     writer = csv.writer(f)
 #     writer.writerows(ls)
 @bot.message_handler(commands=['start'])
 def start_message(message):
+    global ls
+    bot.send_chat_action(message.chat.id, 'typing')
+    time.sleep(2)
+    bot.reply_to(message, "Loading...")
+    ls = []
+    date =  datetime.datetime.now().date()
+    while True:
+        url = f'https://kaktus.media/?lable=8&date={date}&order=time'
+        response = requests.get(url).text
+        page = bs(response, 'lxml')
+        divs = page.find_all('div','ArticleItem--data ArticleItem--data--withImage')
+        link = page.find_all('a','ArticleItem--name')
+        if len(divs)<20:
+            for i in range(len(divs)):
+                new = bs(requests.get(link[i].get('href')).text,'lxml')
+                ps = new.find_all('p')
+                ls.append([divs[i].find('a','ArticleItem--name').text.replace('\n',''),divs[i].find('img').get('src') if divs[i].find('img') != None else 'None', ' '.join([i.text.strip() if i != None else 'None' for i in ps])])
+        if len(divs)>=20:
+            for i in range(len(divs[:20-len(ls)])):
+                new = bs(requests.get(link[i].get('href')).text,'lxml')
+                ps = new.find_all('p')
+                ls.append([divs[i].find('a','ArticleItem--name').text.replace('\n',''),divs[i].find('img').get('src') if divs[i].find('img') != None else 'None', ' '.join([i.text.strip() if i != None else 'None' for i in ps])])
+        if len(ls) < 20:
+            date -= datetime.timedelta(days=1)
+        else:
+            break
+    for i in range(len(ls)):
+        ls[i].insert(0,str(i+1))
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     bt1 = types.KeyboardButton('News')
     bt2 = types.KeyboardButton('Quit')
     markup.add(bt1,bt2)
-    mes2 = bot.send_message(message.chat.id, 'Press News to get the latest 20 news', reply_markup=markup)
+    bot.send_message(message.chat.id, 'Press News to get the latest 20 news', reply_markup=markup)
 @bot.message_handler(func=lambda x:x.text in ['News','Quit'])
 def bts(message):
     if message.text == 'News':
