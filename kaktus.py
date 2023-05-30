@@ -17,7 +17,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 def start_message(message):
     global ls
     bot.send_chat_action(message.chat.id, 'typing')
-    time.sleep(2)
+    time.sleep(1)
     bot.reply_to(message, "Loading...")
     ls = []
     date =  datetime.datetime.now().date()
@@ -52,9 +52,8 @@ def start_message(message):
 def bts(message):
     if message.text == 'News':
         n_markup = types.ReplyKeyboardMarkup(row_width=5,resize_keyboard=True)
-        for i in range(1,21):
-            btn = types.KeyboardButton(str(i))
-            n_markup.add(btn)
+        btns = [types.KeyboardButton(str(i+1)) for i in range(20)]
+        n_markup.add(*btns)
         bot.send_message(message.from_user.id,'Choose news by number(1-20)', reply_markup=n_markup)
         for i in range(len(ls)):
             bot.send_message(message.from_user.id,ls[i][0]+'.'+ls[i][1])
