@@ -18,7 +18,7 @@ def start_message(message):
     global ls
     bot.send_chat_action(message.chat.id, 'typing')
     time.sleep(1)
-    bot.reply_to(message, "Loading...")
+    bot.reply_to(message, "Loading...⏳")
     ls = []
     date =  datetime.datetime.now().date()
     while True:
